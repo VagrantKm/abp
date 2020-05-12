@@ -15,6 +15,7 @@ using Swashbuckle.AspNetCore.Swagger;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
@@ -86,6 +87,7 @@ namespace MyCompanyName.MyProjectName
                 options.Languages.Add(new LanguageInfo("cs", "cs", "Čeština"));
                 options.Languages.Add(new LanguageInfo("en", "en", "English"));
                 options.Languages.Add(new LanguageInfo("pt-BR", "pt-BR", "Português"));
+                options.Languages.Add(new LanguageInfo("ru", "ru", "Русский"));
                 options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe"));
                 options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
                 options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文"));
@@ -146,22 +148,29 @@ namespace MyCompanyName.MyProjectName
         public override void OnApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
+            var env = context.GetEnvironment();
 
-            if (!context.GetEnvironment().IsDevelopment())
+            if (env.IsDevelopment())
             {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseErrorPage();
                 app.UseHsts();
             }
+
             app.UseHttpsRedirection();
             app.UseCorrelationId();
             app.UseVirtualFiles();
             app.UseRouting();
             app.UseCors(DefaultCorsPolicyName);
             app.UseAuthentication();
-            app.UseAuthorization();
             if (MultiTenancyConsts.IsEnabled)
             {
                 app.UseMultiTenancy();
             }
+            app.UseAuthorization();
             app.UseAbpRequestLocalization();
             app.UseSwagger();
             app.UseSwaggerUI(options =>
@@ -170,7 +179,7 @@ namespace MyCompanyName.MyProjectName
             });
             app.UseAuditing();
             app.UseAbpSerilogEnrichers();
-            app.UseMvcWithDefaultRouteAndArea();
+            app.UseConfiguredEndpoints();
         }
     }
 }
