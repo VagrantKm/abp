@@ -54,16 +54,21 @@ namespace Volo.Abp.Cli.ProjectBuilding.Building.Steps
                     if (_companyName != null)
                     {
                         RenameHelper.RenameAll(_entries, _companyNamePlaceHolder, _companyName);
+                        RenameHelper.RenameAll(_entries, _companyNamePlaceHolder.ToCamelCase(), _companyName.ToCamelCase());
+                        RenameHelper.RenameAll(_entries, _companyNamePlaceHolder.ToKebabCase(), _companyName.ToKebabCase());
                     }
                     else
                     {
                         RenameHelper.RenameAll(_entries, _companyNamePlaceHolder + "." + _projectNamePlaceHolder, _projectNamePlaceHolder);
+                        RenameHelper.RenameAll(_entries, _companyNamePlaceHolder.ToCamelCase() + "." + _projectNamePlaceHolder.ToCamelCase(), _projectNamePlaceHolder.ToCamelCase());
+                        RenameHelper.RenameAll(_entries, _companyNamePlaceHolder.ToKebabCase() + "/" + _projectNamePlaceHolder.ToKebabCase(), _projectNamePlaceHolder.ToKebabCase());
                     }
                 }
 
                 RenameHelper.RenameAll(_entries, _projectNamePlaceHolder, _projectName);
                 RenameHelper.RenameAll(_entries, _projectNamePlaceHolder.ToCamelCase(), _projectName.ToCamelCase());
                 RenameHelper.RenameAll(_entries, _projectNamePlaceHolder.ToKebabCase(), _projectName.ToKebabCase());
+                RenameHelper.RenameAll(_entries, _projectNamePlaceHolder.ToSnakeCase().ToUpper(), _projectName.ToSnakeCase().ToUpper());
             }
         }
     }

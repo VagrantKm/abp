@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Localization;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Timing;
@@ -14,50 +15,37 @@ namespace Volo.Abp.AspNetCore.SignalR
 {
     public abstract class AbpHub : Hub
     {
+        public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
+
+        [Obsolete("Use LazyServiceProvider instead.")]
         public IServiceProvider ServiceProvider { get; set; }
-        protected readonly object ServiceProviderLock = new object();
 
-        protected TService LazyGetRequiredService<TService>(ref TService reference)
-            => LazyGetRequiredService(typeof(TService), ref reference);
+        protected ILoggerFactory LoggerFactory => LazyServiceProvider.LazyGetService<ILoggerFactory>();
 
-        protected TRef LazyGetRequiredService<TRef>(Type serviceType, ref TRef reference)
+        protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName) ?? NullLogger.Instance);
+
+        protected ICurrentUser CurrentUser => LazyServiceProvider.LazyGetService<ICurrentUser>();
+
+        protected ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetService<ICurrentTenant>();
+
+        protected IAuthorizationService AuthorizationService => LazyServiceProvider.LazyGetService<IAuthorizationService>();
+
+        protected IClock Clock => LazyServiceProvider.LazyGetService<IClock>();
+
+        protected IStringLocalizerFactory StringLocalizerFactory => LazyServiceProvider.LazyGetService<IStringLocalizerFactory>();
+
+        protected IStringLocalizer L
         {
-            if (reference == null)
+            get
             {
-                lock (ServiceProviderLock)
+                if (_localizer == null)
                 {
-                    if (reference == null)
-                    {
-                        reference = (TRef)ServiceProvider.GetRequiredService(serviceType);
-                    }
+                    _localizer = CreateLocalizer();
                 }
+
+                return _localizer;
             }
-
-            return reference;
         }
-
-        public ILoggerFactory LoggerFactory => LazyGetRequiredService(ref _loggerFactory);
-        private ILoggerFactory _loggerFactory;
-
-        protected ILogger Logger => _lazyLogger.Value;
-        private Lazy<ILogger> _lazyLogger => new Lazy<ILogger>(() => LoggerFactory?.CreateLogger(GetType().FullName) ?? NullLogger.Instance, true);
-
-        public ICurrentUser CurrentUser => LazyGetRequiredService(ref _currentUser);
-        private ICurrentUser _currentUser;
-
-        public ICurrentTenant CurrentTenant => LazyGetRequiredService(ref _currentTenant);
-        private ICurrentTenant _currentTenant;
-
-        public IAuthorizationService AuthorizationService => LazyGetRequiredService(ref _authorizationService);
-        private IAuthorizationService _authorizationService;
-
-        public IClock Clock => LazyGetRequiredService(ref _clock);
-        private IClock _clock;
-
-        public IStringLocalizerFactory StringLocalizerFactory => LazyGetRequiredService(ref _stringLocalizerFactory);
-        private IStringLocalizerFactory _stringLocalizerFactory;
-
-        public IStringLocalizer L => _localizer ?? (_localizer = StringLocalizerFactory.Create(LocalizationResource));
         private IStringLocalizer _localizer;
 
         protected Type LocalizationResource
@@ -70,55 +58,57 @@ namespace Volo.Abp.AspNetCore.SignalR
             }
         }
         private Type _localizationResource = typeof(DefaultResource);
+
+        protected virtual IStringLocalizer CreateLocalizer()
+        {
+            if (LocalizationResource != null)
+            {
+                return StringLocalizerFactory.Create(LocalizationResource);
+            }
+
+            var localizer = StringLocalizerFactory.CreateDefaultOrNull();
+            if (localizer == null)
+            {
+                throw new AbpException($"Set {nameof(LocalizationResource)} or define the default localization resource type (by configuring the {nameof(AbpLocalizationOptions)}.{nameof(AbpLocalizationOptions.DefaultResourceType)}) to be able to use the {nameof(L)} object!");
+            }
+
+            return localizer;
+        }
     }
 
-    public abstract class AbpHub<T> : Hub<T> 
+    public abstract class AbpHub<T> : Hub<T>
         where T : class
     {
+        public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
+
         public IServiceProvider ServiceProvider { get; set; }
-        protected readonly object ServiceProviderLock = new object();
 
-        protected TService LazyGetRequiredService<TService>(ref TService reference)
-            => LazyGetRequiredService(typeof(TService), ref reference);
+        protected ILoggerFactory LoggerFactory => LazyServiceProvider.LazyGetService<ILoggerFactory>();
 
-        protected TRef LazyGetRequiredService<TRef>(Type serviceType, ref TRef reference)
+        protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName) ?? NullLogger.Instance);
+
+        protected ICurrentUser CurrentUser => LazyServiceProvider.LazyGetService<ICurrentUser>();
+
+        protected ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetService<ICurrentTenant>();
+
+        protected IAuthorizationService AuthorizationService => LazyServiceProvider.LazyGetService<IAuthorizationService>();
+
+        protected IClock Clock => LazyServiceProvider.LazyGetService<IClock>();
+
+        protected IStringLocalizerFactory StringLocalizerFactory => LazyServiceProvider.LazyGetService<IStringLocalizerFactory>();
+
+        protected IStringLocalizer L
         {
-            if (reference == null)
+            get
             {
-                lock (ServiceProviderLock)
+                if (_localizer == null)
                 {
-                    if (reference == null)
-                    {
-                        reference = (TRef)ServiceProvider.GetRequiredService(serviceType);
-                    }
+                    _localizer = CreateLocalizer();
                 }
+
+                return _localizer;
             }
-
-            return reference;
         }
-
-        public ILoggerFactory LoggerFactory => LazyGetRequiredService(ref _loggerFactory);
-        private ILoggerFactory _loggerFactory;
-
-        protected ILogger Logger => _lazyLogger.Value;
-        private Lazy<ILogger> _lazyLogger => new Lazy<ILogger>(() => LoggerFactory?.CreateLogger(GetType().FullName) ?? NullLogger.Instance, true);
-
-        public ICurrentUser CurrentUser => LazyGetRequiredService(ref _currentUser);
-        private ICurrentUser _currentUser;
-
-        public ICurrentTenant CurrentTenant => LazyGetRequiredService(ref _currentTenant);
-        private ICurrentTenant _currentTenant;
-
-        public IAuthorizationService AuthorizationService => LazyGetRequiredService(ref _authorizationService);
-        private IAuthorizationService _authorizationService;
-
-        public IClock Clock => LazyGetRequiredService(ref _clock);
-        private IClock _clock;
-
-        public IStringLocalizerFactory StringLocalizerFactory => LazyGetRequiredService(ref _stringLocalizerFactory);
-        private IStringLocalizerFactory _stringLocalizerFactory;
-
-        public IStringLocalizer L => _localizer ?? (_localizer = StringLocalizerFactory.Create(LocalizationResource));
         private IStringLocalizer _localizer;
 
         protected Type LocalizationResource
@@ -131,5 +121,21 @@ namespace Volo.Abp.AspNetCore.SignalR
             }
         }
         private Type _localizationResource = typeof(DefaultResource);
+
+        protected virtual IStringLocalizer CreateLocalizer()
+        {
+            if (LocalizationResource != null)
+            {
+                return StringLocalizerFactory.Create(LocalizationResource);
+            }
+
+            var localizer = StringLocalizerFactory.CreateDefaultOrNull();
+            if (localizer == null)
+            {
+                throw new AbpException($"Set {nameof(LocalizationResource)} or define the default localization resource type (by configuring the {nameof(AbpLocalizationOptions)}.{nameof(AbpLocalizationOptions.DefaultResourceType)}) to be able to use the {nameof(L)} object!");
+            }
+
+            return localizer;
+        }
     }
 }

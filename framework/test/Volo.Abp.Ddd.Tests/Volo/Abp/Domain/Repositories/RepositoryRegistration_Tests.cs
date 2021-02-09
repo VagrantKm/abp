@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -241,7 +242,13 @@ namespace Volo.Abp.Domain.Repositories
             where TEntity : class, IEntity
         {
 
+            [Obsolete("Use GetQueryableAsync method.")]
             protected override IQueryable<TEntity> GetQueryable()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Task<IQueryable<TEntity>> GetQueryableAsync()
             {
                 throw new NotImplementedException();
             }
@@ -280,6 +287,12 @@ namespace Volo.Abp.Domain.Repositories
             {
                 throw new NotImplementedException();
             }
+
+            public override Task<List<TEntity>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting, bool includeDetails = false,
+                CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public class MyTestDefaultRepository<TEntity, TKey> : MyTestDefaultRepository<TEntity>, IRepository<TEntity, TKey>
@@ -296,6 +309,11 @@ namespace Volo.Abp.Domain.Repositories
             }
 
             public Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task DeleteManyAsync([NotNull] IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }

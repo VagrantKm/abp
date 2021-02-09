@@ -41,25 +41,26 @@ namespace MyCompanyName.MyProjectName.Web.Menus
                 administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
             }
 
-            var l = context.ServiceProvider.GetRequiredService<IStringLocalizer<MyProjectNameResource>>();
+            var l = context.GetLocalizer<MyProjectNameResource>();
 
-            context.Menu.Items.Insert(0, new ApplicationMenuItem("MyProjectName.Home", l["Menu:Home"], "/"));
+            context.Menu.Items.Insert(0, new ApplicationMenuItem(MyProjectNameMenus.Home, l["Menu:Home"], "~/"));
 
             return Task.CompletedTask;
         }
 
         private Task ConfigureUserMenuAsync(MenuConfigurationContext context)
         {
-            var l = context.ServiceProvider.GetRequiredService<IStringLocalizer<MyProjectNameResource>>();
-            var accountStringLocalizer = context.ServiceProvider.GetRequiredService<IStringLocalizer<AccountResource>>();
+            var l = context.GetLocalizer<MyProjectNameResource>();
+            var accountStringLocalizer = context.GetLocalizer<AccountResource>();
             var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 
             var identityServerUrl = _configuration["AuthServer:Authority"] ?? "";
 
             if (currentUser.IsAuthenticated)
             {
-                context.Menu.AddItem(new ApplicationMenuItem("Account.Manage", accountStringLocalizer["ManageYourProfile"], $"{identityServerUrl.EnsureEndsWith('/')}Account/Manage", icon: "fa fa-cog", order: 1000, null, "_blank"));
-                context.Menu.AddItem(new ApplicationMenuItem("Account.Logout", l["Logout"], url: "/Account/Logout", icon: "fa fa-power-off", order: int.MaxValue - 1000));
+                context.Menu.AddItem(new ApplicationMenuItem("Account.Manage", accountStringLocalizer["ManageYourProfile"],
+                    $"{identityServerUrl.EnsureEndsWith('/')}Account/Manage?returnUrl={_configuration["App:SelfUrl"]}", icon: "fa fa-cog", order: 1000, null, "_blank"));
+                context.Menu.AddItem(new ApplicationMenuItem("Account.Logout", l["Logout"], url: "~/Account/Logout", icon: "fa fa-power-off", order: int.MaxValue - 1000));
             }
 
             return Task.CompletedTask;
